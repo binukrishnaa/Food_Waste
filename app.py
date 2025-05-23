@@ -1,20 +1,35 @@
 import streamlit as st
 import numpy as np
-import pandas as pd
 import pickle
 
 # Load trained model
-model = pickle.load(open('model.pkl', 'rb'))
+try:
+    with open('model.pkl', 'rb') as f:
+        model = pickle.load(f)
+except FileNotFoundError:
+    st.error("❌ model.pkl not found. Please upload the model file.")
+    st.stop()
 
-st.title("🍽️ Food Waste Prediction App")
+st.title("🍽️ Food Waste Economic Loss Predictor")
+st.markdown("""
+This app predicts **Economic Loss (in Million $)** based on:
+- Total Waste (Tons)
+- Avg Waste per Capita (Kg)
+- Population (Million)
+- Household Waste (%)
+""")
 
-# Input fields (customize based on your features)
-feature1 = st.number_input("Feature 1")
-feature2 = st.selectbox("Feature 2", ["Option1", "Option2"])
-# Add all features your model needs...
+# Input features
+total_waste = st.number_input("Total Waste (Tons)", min_value=0.0, step=100.0)
+avg_waste_per_capita = st.number_input("Avg Waste per Capita (Kg)", min_value=0.0, step=1.0)
+population = st.number_input("Population (Million)", min_value=0.0, step=0.1)
+household_waste_pct = st.slider("Household Waste (%)", min_value=0, max_value=100, step=1)
 
 # Predict button
-if st.button("Predict"):
-    input_data = np.array([[feature1, feature2]])  # shape must match training
-    prediction = model.predict(input_data)
-    st.success(f"Predicted Output: {prediction[0]}")
+if st.button("Predict Economic Loss"):
+    input_features = np.array([[total_waste, avg_waste_per_capita, population, household_waste_pct]])
+    try:
+        prediction = model.predict(input_features)
+        st.success(f"Estimated Economic Loss: ${prediction[0]:,.2f} Million")
+    except Exception as e:
+        st.error(f"Prediction failed: {e}")
